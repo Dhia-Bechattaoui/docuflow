@@ -51,13 +51,32 @@ def init_cmd(
     if config_path.exists():
         console.print(f"[yellow]⚠️  Configuration file '{config_path}' already exists. Skipping creation.[/yellow]")
     else:
-        # Create a basic default template config
-        config_content = """# DocuFlow Configuration Template
+        # Discover watch directories dynamically based on the project structure
+        watch_dirs = ["src"]
+        try:
+            discovered = [
+                p.name for p in Path.cwd().iterdir()
+                if p.is_dir() 
+                and not p.name.startswith(".") 
+                and p.name not in {
+                    "node_modules", "venv", ".venv", "bin", "obj", "dist", 
+                    "build", "docs", "etc", "scratch", "out", "target"
+                }
+            ]
+            if discovered:
+                watch_dirs = sorted(discovered)
+        except Exception:
+            pass
+
+        watch_dirs_str = ", ".join(f'"{d}"' for d in watch_dirs)
+
+        # Create a project-aware default configuration config
+        config_content = f"""# DocuFlow Configuration Template
 # This file controls targeting, rules, and LLM providers for the DocuFlow agent.
 
 [project]
 name = "DocuFlow"
-watch_dirs = ["src"]
+watch_dirs = [{watch_dirs_str}]
 
 [documentation]
 docs_dir = "docs"
@@ -78,7 +97,7 @@ include_staged = true
 """
         try:
             config_path.write_text(config_content, encoding="utf-8")
-            console.print(f"[green]✅ Created configuration template: [bold]{config_path}[/bold][/green]")
+            console.print(f"[green]✅ Created project-aware configuration template: [bold]{config_path}[/bold][/green]")
         except Exception as e:
             console.print(f"[red]❌ Failed to create config file: {e}[/red]")
             raise typer.Exit(code=1)

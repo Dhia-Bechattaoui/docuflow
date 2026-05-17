@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-05-17
+
+### Added
+
+- **Smart Project-Aware Directory Discovery**: Enhanced the `init` command to dynamically scan the host repository root for active directories, automatically populating the `watch_dirs` configuration based on the developer's exact workspace structure rather than hardcoding static fallbacks.
+- **Graceful Sync Dry-Run File Stubbing**: Upgraded the synchronizer CLI engine to gracefully handle non-existent documents in dry-run mode, enabling developers to preview AI prompts before writing changes.
+
 ## [0.6.0] - 2026-05-17
 
 ### Added
