@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.status import Status
+from rich.markdown import Markdown
 from rich import print as rprint
 
 from docuflow.config import load_config, DocuFlowConfig
@@ -18,6 +19,11 @@ from docuflow.git_utils import (
     FileChange,
 )
 from docuflow.context_builder import build_impact_analysis
+from docuflow.ai_engine import (
+    find_associated_docs,
+    execute_llm_update,
+    build_orchestrator_prompt,
+)
 
 app = typer.Typer(
     name="docuflow",
@@ -234,6 +240,64 @@ def run_cmd(
         )
     )
 
+def check_markdown_content(content: str) -> List[str]:
+    """
+    Runs a single-pass, stateful line parser to check markdown alignment with guidelines.
+    Returns a list of issues found.
+    """
+    issues = []
+    lines = content.splitlines()
+    in_code_block = False
+    in_mermaid = False
+    h1_count = 0
+    todos = []
+    unspecified_blocks = []
+    mermaid_issues = []
+
+    for i, line in enumerate(lines):
+        # Handle code block state toggle
+        if line.startswith("```"):
+            if not in_code_block:
+                specifier = line[3:].strip()
+                if not specifier:
+                    unspecified_blocks.append(i + 1)
+                if specifier == "mermaid":
+                    in_mermaid = True
+                in_code_block = True
+            else:
+                in_code_block = False
+                in_mermaid = False
+            continue
+
+        if in_code_block:
+            if in_mermaid:
+                if "[" in line and "]" in line and '"' not in line and ("(" in line or ")" in line):
+                    mermaid_issues.append(i + 1)
+            continue
+
+        # Outside code blocks: Check for guidelines
+        if line.startswith("# ") and not line.startswith("##"):
+            h1_count += 1
+        
+        if "TODO" in line or "FIXME" in line:
+            todos.append(i + 1)
+
+    if h1_count == 0:
+        issues.append("Missing single standard H1 header (`# Title`)")
+    elif h1_count > 1:
+        issues.append(f"Multiple H1 headers found ({h1_count})")
+
+    if todos:
+        issues.append(f"Contains TODO / placeholders on line(s): {', '.join(map(str, todos))}")
+
+    if unspecified_blocks:
+        issues.append(f"Code block missing language specifier on line(s): {', '.join(map(str, unspecified_blocks))}")
+
+    if mermaid_issues:
+        issues.append(f"Mermaid label with special characters missing quotes on line(s): {', '.join(map(str, mermaid_issues))}")
+
+    return issues
+
 @app.command("check")
 def check_cmd(
     config_path: Optional[Path] = typer.Option(
@@ -281,62 +345,7 @@ def check_cmd(
         issues = []
         try:
             content = md_file.read_text(encoding="utf-8")
-            lines = content.splitlines()
-            
-            # Run a single-pass, stateful line parser to check all guidelines
-            in_code_block = False
-            in_mermaid = False
-            h1_count = 0
-            todos = []
-            unspecified_blocks = []
-            mermaid_issues = []
-
-            for i, line in enumerate(lines):
-                # Handle code block state toggle
-                if line.startswith("```"):
-                    if not in_code_block:
-                        # Opening code block
-                        specifier = line[3:].strip()
-                        if not specifier:
-                            unspecified_blocks.append(i + 1)
-                        if specifier == "mermaid":
-                            in_mermaid = True
-                        in_code_block = True
-                    else:
-                        # Closing code block
-                        in_code_block = False
-                        in_mermaid = False
-                    continue
-
-                if in_code_block:
-                    if in_mermaid:
-                        # check for common mermaid label issues like special characters without quotes
-                        if "[" in line and "]" in line and '"' not in line and ("(" in line or ")" in line):
-                            mermaid_issues.append(i + 1)
-                    continue
-
-                # Outside code blocks: Check for guidelines
-                if line.startswith("# ") and not line.startswith("##"):
-                    h1_count += 1
-                
-                if "TODO" in line or "FIXME" in line:
-                    todos.append(i + 1)
-
-            # Accumulate findings
-            if h1_count == 0:
-                issues.append("Missing single standard H1 header (`# Title`)")
-            elif h1_count > 1:
-                issues.append(f"Multiple H1 headers found ({h1_count})")
-
-            if todos:
-                issues.append(f"Contains TODO / placeholders on line(s): {', '.join(map(str, todos))}")
-
-            if unspecified_blocks:
-                issues.append(f"Code block missing language specifier on line(s): {', '.join(map(str, unspecified_blocks))}")
-
-            if mermaid_issues:
-                issues.append(f"Mermaid label with special characters missing quotes on line(s): {', '.join(map(str, mermaid_issues))}")
-
+            issues = check_markdown_content(content)
         except Exception as e:
             issues.append(f"Failed to read file: {e}")
 
@@ -360,6 +369,166 @@ def check_cmd(
     
     if failed_count > 0:
         console.print("\n[bold yellow]💡 Recommendation:[/bold yellow] Clean up the failed files above to comply with [bold]documentation-rules.md[/bold].")
+
+@app.command("sync")
+def sync_cmd(
+    config_path: Optional[Path] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to the docuflow.toml configuration file."
+    ),
+    target_branch: Optional[str] = typer.Option(
+        None,
+        "--branch",
+        "-b",
+        help="Target branch/ref to compare against (e.g., origin/main)."
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-d",
+        help="Run in dry-run mode. Generates and displays prompts without calling LLM or writing files."
+    )
+):
+    """
+    Automatically synchronize technical markdown documentation with recent code updates using AI.
+    """
+    console.print("[bold blue]🤖 DocuFlow AI Documentation Orchestration[/bold blue]\n")
+    
+    config = load_config(config_path)
+    branch = target_branch or config.git.target_branch
+
+    if not is_git_repo():
+        console.print("[bold red]❌ Error: Current directory is not a Git repository.[/bold red]")
+        raise typer.Exit(code=1)
+
+    # 1. Fetch changed files
+    all_changes: List[FileChange] = []
+    try:
+        if config.git.include_staged:
+            all_changes.extend(get_staged_changes())
+        if config.git.include_unstaged:
+            all_changes.extend(get_unstaged_changes())
+        if branch and not all_changes:
+            all_changes.extend(get_branch_diff(branch))
+    except Exception as e:
+        console.print(f"[bold red]❌ Error fetching changes: {e}[/bold red]")
+        raise typer.Exit(code=1)
+
+    if not all_changes:
+        console.print("[bold green]✨ No code modifications detected! Documentation is up to date.[/bold green]")
+        return
+
+    # 2. Locate guidelines rules file
+    rules_file = Path(".agents/rules/documentation-rules.md")
+    rules_content = ""
+    if rules_file.exists():
+        try:
+            rules_content = rules_file.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    if not rules_content:
+        rules_content = "# Guidelines\n* Use single standard H1 title.\n* Wrap Mermaid special labels in quotes.\n* Always fence code blocks with languages."
+
+    docs_dir = Path(config.documentation.docs_dir)
+    synced_any = False
+
+    for change in all_changes:
+        # We only sync context for modified or added files
+        if change.change_type not in ["M", "A"]:
+            continue
+
+        # AST analysis
+        try:
+            analysis = build_impact_analysis(change.filepath, change.diff)
+        except Exception as e:
+            console.print(f"[yellow]⚠️ Skipped AST parsing for {change.filepath}: {e}[/yellow]")
+            continue
+
+        # Find associated markdown files
+        associated = find_associated_docs(change.filepath, docs_dir)
+        if not associated:
+            continue
+
+        for md_path in associated:
+            synced_any = True
+            console.print(f"[bold cyan]🔗 Found associated documentation: {md_path}[/bold cyan]")
+            
+            try:
+                md_content = md_path.read_text(encoding="utf-8")
+            except Exception as e:
+                console.print(f"[red]❌ Failed to read {md_path}: {e}[/red]")
+                continue
+
+            # Build prompt
+            prompt = build_orchestrator_prompt(
+                rules_content=rules_content,
+                md_content=md_content,
+                md_filename=md_path.name,
+                analysis=analysis
+            )
+
+            if dry_run:
+                # Pretty print prompt
+                console.print(Panel(prompt, title=f"📋 Dry-Run AI Prompt for {md_path.name}", border_style="yellow"))
+                console.print(f"[bold yellow]⚠️ Dry-run: skipped API call for {md_path.name}[/bold yellow]\n")
+                continue
+
+            # Call AI
+            provider_label = config.ai.provider.upper()
+            with console.status(f"[bold green]Running AI Sync ({provider_label}) for {md_path.name}...") as status:
+                updated_content, err = execute_llm_update(config, prompt)
+
+            if err:
+                console.print(f"[bold red]❌ AI Sync Failed: {err}[/bold red]")
+                console.print(f"[yellow]💡 Tip: Set the environment variable {provider_label}_API_KEY or run with --dry-run[/yellow]\n")
+                continue
+
+            if not updated_content:
+                console.print(f"[bold red]❌ AI returned empty response for {md_path.name}[/bold red]\n")
+                continue
+
+            # Validate generated markdown before saving
+            issues = check_markdown_content(updated_content)
+            if issues:
+                console.print(f"[bold yellow]⚠️ Warning: AI output for {md_path.name} violated styling rules:[/bold yellow]")
+                for issue in issues:
+                    console.print(f"  - [yellow]{issue}[/yellow]")
+                console.print("[bold yellow]Proceeding to save with warnings...[/bold yellow]")
+
+            # Save the file
+            try:
+                md_path.write_text(updated_content, encoding="utf-8")
+                console.print(f"[bold green]✅ Successfully updated technical documentation: {md_path}[/bold green]\n")
+            except Exception as e:
+                console.print(f"[bold red]❌ Failed to save changes to {md_path}: {e}[/bold red]\n")
+
+    if not synced_any:
+        console.print("[bold yellow]⚠️ No associated documentation files were found in the docs directory for the changed files.[/bold yellow]")
+        console.print(f"[dim]Note: Documentation is matched if the file name stem or classes are mentioned in the markdown file.[/dim]")
+
+@app.command("view")
+def view_cmd(
+    filepath: Path = typer.Argument(
+        ...,
+        help="Path to the technical markdown (.md) document to view."
+    )
+):
+    """
+    Render a technical documentation markdown file directly inside the terminal with beautiful, rich formatting.
+    """
+    if not filepath.exists():
+        console.print(f"[bold red]❌ Error: File '{filepath}' does not exist.[/bold red]")
+        raise typer.Exit(code=1)
+        
+    try:
+        content = filepath.read_text(encoding="utf-8")
+        md = Markdown(content)
+        console.print(md)
+    except Exception as e:
+        console.print(f"[bold red]❌ Error reading or rendering file: {e}[/bold red]")
+        raise typer.Exit(code=1)
 
 if __name__ == "__main__":
     app()

@@ -1,6 +1,6 @@
 # Sample API Reference
 
-This document describes the API entry points for DocuFlow.
+This document describes the API entry points for DocuFlow. The primary entry point is defined in `main.py`, which invokes native git helper functions in `git_utils.py` to analyze modified repository paths.
 
 ## Sub-Header (Complies with single H1 Rule)
 

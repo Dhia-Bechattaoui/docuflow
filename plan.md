@@ -34,14 +34,14 @@ DocuFlow acts as an autonomous documentation manager. It:
 - [x] Design the context-builder that extracts the "impacted area" of a code change.
 
 ### Phase 3: AI Documentation Engine
-- [ ] Implement the agentic workflow to update existing `.md` files.
-- [ ] Create robust prompts that instruct the LLM to perform precise, non-destructive updates to documentation.
-- [ ] Build automatic Mermaid diagram generator/updater to visualize state machines or class diagrams.
+- [x] Implement the agentic workflow (`docuflow sync` command) to update existing `.md` files.
+- [x] Create robust prompts that instruct the LLM to perform precise, non-destructive updates to documentation.
+- [x] Build automatic Mermaid diagram generator/updater to visualize state machines or class diagrams.
 
 ### Phase 4: CI/CD & Formatting
-- [ ] Add GitHub Actions workflow integrations.
-- [ ] Support custom configuration files (`docuflow.toml`) to target specific directories and documentation rules.
-- [ ] Build a local CLI markdown viewer/TUI dashboard.
+- [x] Add GitHub Actions workflow integrations (`docuflow-ci.yml`).
+- [x] Support custom configuration files (`docuflow.toml`) to target specific directories and documentation rules.
+- [x] Build a local CLI markdown viewer/TUI dashboard (`docuflow view` command).
 
 ---
 
