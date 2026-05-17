@@ -12,6 +12,7 @@ from rich import print as rprint
 from docuflow.config import load_config, DocuFlowConfig
 from docuflow.git_utils import (
     is_git_repo,
+    get_git_root,
     get_unstaged_changes,
     get_staged_changes,
     get_branch_diff,
@@ -66,7 +67,7 @@ workflows_dir = ".agents/workflows"
 
 [ai]
 provider = "gemini"
-model = "gemini-1.5-pro"
+model = "gemini-2.5-flash"
 temperature = 0.2
 max_tokens = 4096
 
@@ -440,6 +441,26 @@ def sync_cmd(
     synced_any = False
 
     for change in all_changes:
+        # Check if the file is within any watch_dirs
+        try:
+            git_root = get_git_root(Path.cwd())
+            file_abs = (git_root / change.filepath).resolve()
+        except Exception:
+            file_abs = Path(change.filepath).resolve()
+            
+        in_watch_dir = False
+        for watch_dir in config.project.watch_dirs:
+            wd_abs = Path(watch_dir).resolve()
+            try:
+                if file_abs.is_relative_to(wd_abs):
+                    in_watch_dir = True
+                    break
+            except ValueError:
+                continue
+                
+        if not in_watch_dir:
+            continue
+
         # We only sync context for modified or added files
         if change.change_type not in ["M", "A"]:
             continue

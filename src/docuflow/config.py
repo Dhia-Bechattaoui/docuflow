@@ -16,7 +16,7 @@ class DocumentationConfig(BaseModel):
 
 class AIConfig(BaseModel):
     provider: str = "gemini"
-    model: str = "gemini-1.5-pro"
+    model: str = "gemini-2.5-flash"
     temperature: float = 0.2
     max_tokens: int = 4096
 

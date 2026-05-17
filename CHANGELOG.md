@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-17
+
+### Added
+
+- **Gemini 2.5 Flash Model Support**: Integrated support for the brand new `gemini-2.5-flash` model as the main AI engine. This ensures compatibility with the active 2026 Generative Language API model registry, boosting generation speed, introducing a 1M token context window, and utilizing advanced logical reasoning.
+
+### Changed
+
+- **Default Configuration Upgrades**: Modernized the configuration defaults, generated `docuflow.toml` templates, setup files, and `README.md` to reference `gemini-2.5-flash` directly as the out-of-the-box provider model.
+- **Version Upgrades**: Incremented project and package versions from `0.4.0` to `0.5.0` in package configurations.
+
 ## [0.4.0] - 2026-05-17
 
 ### Added
@@ -76,7 +87,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Git Ignoring Setup**: Added standard `.gitignore` file to isolate local virtual environments (`.venv`), Python compiled bytecode, and package builds from git tracking.
 - **Documentation Setup**: Automated the initial creation of target `docs/` folder structures via `docuflow init`.
 
-[Unreleased]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/dhia-bechattaoui/docuflow/compare/v0.2.0...v0.3.0

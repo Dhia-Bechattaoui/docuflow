@@ -104,7 +104,7 @@ include_unstaged = true
 
 [ai]
 provider = "gemini" # Options: "gemini", "openai"
-model = "gemini-1.5-pro" # Options: "gemini-1.5-pro", "gpt-4o"
+model = "gemini-2.5-flash" # Options: "gemini-2.5-flash", "gpt-4o"
 temperature = 0.2
 max_tokens = 2000
 ```
