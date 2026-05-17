@@ -1,0 +1,33 @@
+# DocuFlow Configuration Template
+# This file controls targeting, rules, and LLM providers for the DocuFlow agent.
+
+[project]
+name = "DocuFlow"
+# Directories to scan/watch for source code modifications
+watch_dirs = ["src"]
+
+[documentation]
+# Path to the directory where technical documentation is located
+docs_dir = "docs"
+# Glob patterns to target within the documentation directory
+patterns = ["*.md"]
+# Directory containing agent rules and instructions
+rules_dir = ".agents/rules"
+# Directory containing agent workflows
+workflows_dir = ".agents/workflows"
+
+[ai]
+# The active AI LLM provider. Supported options: "gemini", "openai", "anthropic"
+provider = "gemini"
+# The default model to use for analyzing code changes and generating documentation
+model = "gemini-1.5-pro"
+temperature = 0.2
+max_tokens = 4096
+
+[git]
+# Default target branch or reference for comparison (e.g., origin/main or main)
+target_branch = "main"
+# Whether to automatically include unstaged changes in the analysis
+include_unstaged = true
+# Whether to automatically include staged changes in the analysis
+include_staged = true
