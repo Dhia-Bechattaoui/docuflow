@@ -103,7 +103,7 @@ Diff:
 --- MANDATORY INSTRUCTIONS ---
 1. Analyze the raw code changes and the high-level AST modifications.
 2. Update the target documentation file so it perfectly matches the new code structure (e.g., class names, function parameters, return types, or architectural flows).
-3. Perform a NON-DESTRUCTIVE update: only modify, add, or delete details that directly correspond to the code changes. Do NOT touch, rewrite, or delete surrounding unrelated text, descriptions, or headers.
+3. Perform a NON-DESTRUCTIVE update: only modify, add, or delete details that directly correspond to the code changes. Do NOT touch, rewrite, or delete surrounding unrelated text, descriptions, or headers. If the target technical document is empty or only contains a basic header, ignore this non-destructive rule and instead generate a complete, highly-detailed initial technical reference from scratch encompassing all provided code structures.
 4. Synchronize or update any visual Mermaid diagrams inside the documentation to match the new code relationships or state flows, adhering strictly to the Mermaid standards (e.g., wrap node labels containing special characters in double quotes).
 5. Keep formatting intact. Return ONLY the complete, updated markdown content. Do not include any introductory remarks, conversational preambles, or markdown fences wrap outside the file itself.
 """

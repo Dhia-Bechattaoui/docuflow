@@ -389,6 +389,11 @@ def sync_cmd(
         "--dry-run",
         "-d",
         help="Run in dry-run mode. Generates and displays prompts without calling LLM or writing files."
+    ),
+    create_missing: bool = typer.Option(
+        False,
+        "--create-missing",
+        help="Automatically create missing markdown documentation files for new modules."
     )
 ):
     """
@@ -449,7 +454,25 @@ def sync_cmd(
         # Find associated markdown files
         associated = find_associated_docs(change.filepath, docs_dir)
         if not associated:
-            continue
+            if create_missing and change.filepath.endswith(".py"):
+                stem = Path(change.filepath).stem
+                new_md_path = docs_dir / f"{stem}.md"
+                title = stem.replace("_", " ").replace("-", " ").title()
+                
+                if not dry_run:
+                    try:
+                        new_md_path.parent.mkdir(parents=True, exist_ok=True)
+                        new_md_path.write_text(f"# {title}\n\n", encoding="utf-8")
+                        console.print(f"[bold green]✨ Auto-created missing documentation file: {new_md_path}[/bold green]")
+                    except Exception as e:
+                        console.print(f"[bold red]❌ Failed to auto-create {new_md_path}: {e}[/bold red]")
+                        continue
+                else:
+                    console.print(f"[bold yellow]✨ Dry-run: Would auto-create missing documentation file: {new_md_path}[/bold yellow]")
+                
+                associated = [new_md_path]
+            else:
+                continue
 
         for md_path in associated:
             synced_any = True

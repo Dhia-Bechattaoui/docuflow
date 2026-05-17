@@ -42,5 +42,19 @@ class TestAIEngine(unittest.TestCase):
         self.assertIn("Added Code Entities:", summary)
         self.assertIn("def my_func()", summary)
 
+    def test_build_orchestrator_prompt_instructions(self):
+        """
+        Verify that build_orchestrator_prompt includes our new prompt guidance
+        for empty or header-only markdown files.
+        """
+        analysis = ImpactAnalysis(filepath="test.py")
+        prompt = build_orchestrator_prompt(
+            rules_content="Rule 1",
+            md_content="# Header Only",
+            md_filename="test.md",
+            analysis=analysis
+        )
+        self.assertIn("If the target technical document is empty or only contains a basic header", prompt)
+
 if __name__ == "__main__":
     unittest.main()
