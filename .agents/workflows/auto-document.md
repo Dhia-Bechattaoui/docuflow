@@ -9,7 +9,7 @@ This workflow governs how the DocuFlow Agent automatically maintains code docume
 ```mermaid
 graph TD
     A[Git Push / PR Trigger] --> B[Identify Git Diff]
-    B --> C[AST Parsing via Tree-Sitter]
+    B --> C[Polyglot AST Parsing via Tree-Sitter]
     C --> D{Changes Detected?}
     D -- No --> E[Exit Workflow]
     D -- Yes --> F[Find Associated Markdown Files]
@@ -29,11 +29,12 @@ graph TD
 *   **Action**: Runs `git diff` against the main/target branch.
 *   **Artifacts**: List of files changed, added, or deleted.
 
-### Step 2: Build Code Context
-*   **Action**: For every changed source file, run language-specific parsers to detect structural modifications:
+### Step 2: Build Polyglot Code Context
+*   **Action**: Detect the framework (Python, C#/.NET, Angular, Flutter).
+*   **Action**: For every changed source file, run the appropriate `tree-sitter` language parser to detect structural modifications:
     *   New/removed endpoints in route controllers.
     *   Changes to public function signatures, parameters, or return types.
-    *   New class structures or environment variables.
+    *   New class structures, interfaces, or decorators/attributes.
 *   **Action**: Locate existing `.md` files that reference the modified classes/files (using string matching or configuration mapping from `docuflow.toml`).
 
 ### Step 3: Prompt & LLM Execution

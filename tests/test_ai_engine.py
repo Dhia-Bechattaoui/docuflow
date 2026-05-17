@@ -56,5 +56,27 @@ class TestAIEngine(unittest.TestCase):
         )
         self.assertIn("If the target technical document is empty or only contains a basic header", prompt)
 
+    def test_language_specific_instructions(self):
+        """
+        Verify that language-specific framework guidelines are injected in the prompt.
+        """
+        # 1. C#
+        analysis_cs = ImpactAnalysis(filepath="Helper.cs")
+        prompt_cs = build_orchestrator_prompt("Rules", "Content", "test.md", analysis_cs)
+        self.assertIn("C# / .NET", prompt_cs)
+        self.assertIn("Interfaces starting with 'I'", prompt_cs)
+
+        # 2. TypeScript
+        analysis_ts = ImpactAnalysis(filepath="component.ts")
+        prompt_ts = build_orchestrator_prompt("Rules", "Content", "test.md", analysis_ts)
+        self.assertIn("TypeScript / Angular", prompt_ts)
+        self.assertIn("Component decorators", prompt_ts)
+
+        # 3. Dart / Flutter
+        analysis_dart = ImpactAnalysis(filepath="widget.dart")
+        prompt_dart = build_orchestrator_prompt("Rules", "Content", "test.md", analysis_dart)
+        self.assertIn("Dart / Flutter", prompt_dart)
+        self.assertIn("Widget lifecycles", prompt_dart)
+
 if __name__ == "__main__":
     unittest.main()

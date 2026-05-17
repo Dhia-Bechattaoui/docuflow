@@ -43,6 +43,13 @@ DocuFlow acts as an autonomous documentation manager. It:
 - [x] Support custom configuration files (`docuflow.toml`) to target specific directories and documentation rules.
 - [x] Build a local CLI markdown viewer/TUI dashboard (`docuflow view` command).
 
+### Phase 5: Polyglot (Multi-Language) Support
+- [ ] Refactor `parser.py` into a modular `BaseParser` interface (Factory Pattern).
+- [ ] Integrate `tree-sitter` and `tree-sitter-languages` for universal syntax parsing.
+- [ ] Add parsing support for TypeScript/Angular and C#/.NET.
+- [ ] Add parsing support for Dart/Flutter.
+- [ ] Update `ai_engine.py` to use framework-aware instructions based on detected languages.
+
 ---
 
 ## 📂 Project Directory Structure

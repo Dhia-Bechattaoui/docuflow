@@ -66,6 +66,38 @@ def format_ast_summary(analysis: ImpactAnalysis) -> str:
             
     return "\n".join(summary) if summary else "No high-level AST structural changes."
 
+def get_language_instructions(filepath: str) -> str:
+    """
+    Returns framework-specific instructions based on the extension of the modified file.
+    """
+    ext = Path(filepath).suffix.lower()
+    if ext in (".cs", ".csproj"):
+        return """--- FRAMEWORK & LANGUAGE SPECIFIC INSTRUCTIONS (C# / .NET) ---
+- The modified code is from the C# / .NET ecosystem.
+- Correctly document C# specific idioms (e.g., Namespaces, Properties, Interfaces starting with 'I', Records, Task-based asynchronous patterns).
+- If documenting ASP.NET web controllers or API endpoints, highlight routes, HTTP attributes (e.g., [HttpGet], [Route]), and parameter/query binding.
+"""
+    elif ext in (".ts", ".tsx"):
+        return """--- FRAMEWORK & LANGUAGE SPECIFIC INSTRUCTIONS (TypeScript / Angular) ---
+- The modified code is from the TypeScript / Frontend ecosystem.
+- If it is an Angular project: document Component decorators (@Component), Inputs/Outputs (@Input, @Output), Lifecycle hooks (ngOnInit, ngOnChanges), and service injections.
+- If it is React / Next.js: document hooks, component props, and state/routing paradigms.
+- Respect TypeScript strict type-checking, documenting types, interfaces, generics, and return signatures explicitly.
+"""
+    elif ext in (".dart"):
+        return """--- FRAMEWORK & LANGUAGE SPECIFIC INSTRUCTIONS (Dart / Flutter) ---
+- The modified code is from the Dart / Flutter ecosystem.
+- Document Flutter specific layouts, Widget lifecycles, builder methods, State management, and constructor parameters.
+- Highlight Dart specific patterns such as factory constructors, mixins, extensions, and sound null-safety conventions.
+"""
+    elif ext in (".py"):
+        return """--- FRAMEWORK & LANGUAGE SPECIFIC INSTRUCTIONS (Python) ---
+- The modified code is from the Python ecosystem.
+- Follow PEP-8 styling standards.
+- Document type hints, standard decorators (e.g., @property, @staticmethod, @classmethod), and async functions.
+"""
+    return ""
+
 def build_orchestrator_prompt(
     rules_content: str,
     md_content: str,
@@ -77,11 +109,14 @@ def build_orchestrator_prompt(
     current markdown file content, git diff, and AST modifications.
     """
     ast_summary = format_ast_summary(analysis)
+    lang_instructions = get_language_instructions(analysis.filepath)
     
     prompt = f"""You are the DocuFlow AI Documentation Agent. Your job is to update the technical documentation markdown file to accurately reflect recent code modifications.
 
 --- SYSTEM STYLING & FORMATTING RULES (documentation-rules.md) ---
 {rules_content}
+
+{lang_instructions}
 
 --- TARGET TECHNICAL DOCUMENT TO UPDATE ---
 File Name: {md_filename}

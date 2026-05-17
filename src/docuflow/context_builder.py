@@ -42,10 +42,13 @@ def build_impact_analysis(filepath: str, raw_diff: str, base_ref: str = "HEAD", 
         except Exception:
             pass
             
-    # 3. For Python files, parse and compare ASTs
-    if filepath.endswith(".py"):
-        old_entities = {e.name: e for e in parse_code_structure(original_content)}
-        new_entities = {e.name: e for e in parse_code_structure(current_content)}
+    # 3. For supported code files, parse and compare ASTs
+    from docuflow.parser import ParserFactory
+    ext = Path(filepath).suffix.lower()
+    if ext in (".py", ".ts", ".tsx", ".cs", ".dart"):
+        parser = ParserFactory.get_parser(ext)
+        old_entities = {e.name: e for e in parser.parse(original_content)}
+        new_entities = {e.name: e for e in parser.parse(current_content)}
         
         added_entities = []
         modified_entities = []
@@ -76,7 +79,7 @@ def build_impact_analysis(filepath: str, raw_diff: str, base_ref: str = "HEAD", 
             raw_diff=raw_diff
         )
         
-    # Non-python files just map the raw diff without AST structures
+    # Unsupported files just map the raw diff without AST structures
     return ImpactAnalysis(
         filepath=filepath,
         raw_diff=raw_diff

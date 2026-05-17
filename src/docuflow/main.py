@@ -197,8 +197,8 @@ def run_cmd(
             table.add_row(module, change.filepath, status_label, str(diff_lines))
             total_changes += 1
 
-            # Extract AST impact on Python code modifications
-            if change.filepath.endswith(".py"):
+            # Extract AST impact on supported code modifications
+            if Path(change.filepath).suffix in {".py", ".ts", ".tsx", ".cs", ".dart"}:
                 try:
                     analysis = build_impact_analysis(change.filepath, change.diff)
                     if analysis.added_entities or analysis.modified_entities or analysis.removed_entities:
@@ -475,7 +475,7 @@ def sync_cmd(
         # Find associated markdown files
         associated = find_associated_docs(change.filepath, docs_dir)
         if not associated:
-            if create_missing and change.filepath.endswith(".py"):
+            if create_missing and Path(change.filepath).suffix in {".py", ".ts", ".tsx", ".cs", ".dart"}:
                 stem = Path(change.filepath).stem
                 new_md_path = docs_dir / f"{stem}.md"
                 title = stem.replace("_", " ").replace("-", " ").title()
@@ -500,7 +500,12 @@ def sync_cmd(
             console.print(f"[bold cyan]🔗 Found associated documentation: {md_path}[/bold cyan]")
             
             try:
-                md_content = md_path.read_text(encoding="utf-8")
+                if not md_path.exists() and dry_run:
+                    stem = md_path.stem
+                    title = stem.replace("_", " ").replace("-", " ").title()
+                    md_content = f"# {title}\n\n"
+                else:
+                    md_content = md_path.read_text(encoding="utf-8")
             except Exception as e:
                 console.print(f"[red]❌ Failed to read {md_path}: {e}[/red]")
                 continue

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-17
+
+### Added
+
+- **Polyglot AST Parsing**: Fully integrated multi-language support leveraging pre-compiled Tree-Sitter AST syntax trees. DocuFlow can now parse C#/.NET, TypeScript/Angular, Dart/Flutter, and Python files to extract classes, methods, and functions with their signatures, line positions, and comments.
+- **Graceful Grammar Error Boundaries**: Added robust, load-time try-except grammar loading wrappers. If a grammar package is not supported or compiled on the host system, DocuFlow falls back gracefully, maintaining 100% operation.
+- **Framework-Aware AI Prompts**: Dynamically injects customized prompts for C# / .NET, TypeScript / Angular, Dart / Flutter, and Python files.
+- **Unified Polyglot AST Impact Analysis**: Enabled context-aware comparison of old and new file AST structures for C#, TypeScript, Dart, and Python, matching added/modified/removed classes, methods, and functions.
+- **Comprehensive Polyglot Testing Suite**: Added dedicated AST parser tests for TypeScript and C# in `tests/test_parser.py`, and a new context builder test file `tests/test_context_builder.py`.
+
 ## [0.5.0] - 2026-05-17
 
 ### Added
