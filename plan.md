@@ -30,8 +30,8 @@ DocuFlow acts as an autonomous documentation manager. It:
 - [x] Extract file changes and group them by modules/folders.
 
 ### Phase 2: Code Parsing & Context Extraction
-- [ ] Implement AST parser using `tree-sitter` to detect added/modified classes, functions, and interfaces.
-- [ ] Design the context-builder that extracts the "impacted area" of a code change.
+- [x] Implement AST parser (using Python native AST visitor) to detect added/modified classes, functions, and interfaces.
+- [x] Design the context-builder that extracts the "impacted area" of a code change.
 
 ### Phase 3: AI Documentation Engine
 - [ ] Implement the agentic workflow to update existing `.md` files.

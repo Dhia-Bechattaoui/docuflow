@@ -17,6 +17,7 @@ from docuflow.git_utils import (
     group_changes_by_module,
     FileChange,
 )
+from docuflow.context_builder import build_impact_analysis
 
 app = typer.Typer(
     name="docuflow",
@@ -177,6 +178,8 @@ def run_cmd(
     table.add_column("Lines of Diff", style="white", justify="right")
 
     total_changes = 0
+    impact_summaries = []
+
     for module, changes in grouped.items():
         for change in changes:
             diff_lines = len(change.diff.splitlines()) if change.diff else 0
@@ -187,16 +190,45 @@ def run_cmd(
             table.add_row(module, change.filepath, status_label, str(diff_lines))
             total_changes += 1
 
+            # Extract AST impact on Python code modifications
+            if change.filepath.endswith(".py"):
+                try:
+                    analysis = build_impact_analysis(change.filepath, change.diff)
+                    if analysis.added_entities or analysis.modified_entities or analysis.removed_entities:
+                        impact_summaries.append((change.filepath, analysis))
+                except Exception:
+                    pass
+
     console.print(table)
     console.print(f"\n[bold green]📦 Total files changed: {total_changes} across {len(grouped)} modules.[/bold green]")
-    
+
+    # Render Deep AST Structural impact report
+    if impact_summaries:
+        console.print("\n[bold magenta]🔬 Deep AST Code Impact Analysis[/bold magenta]")
+        for filepath, analysis in impact_summaries:
+            console.print(f"  [bold cyan]• {filepath}[/bold cyan]")
+            
+            if analysis.added_entities:
+                for ent in analysis.added_entities:
+                    doc_flag = " 📝 [dim](has docstring)[/dim]" if ent.docstring else ""
+                    console.print(f"    [green]🆕 [Added] {ent.type} [bold]{ent.signature}[/bold][/green]{doc_flag}")
+                    
+            if analysis.modified_entities:
+                for ent in analysis.modified_entities:
+                    doc_flag = " 📝 [dim](has docstring)[/dim]" if ent.docstring else ""
+                    console.print(f"    [yellow]📝 [Modified] {ent.type} [bold]{ent.signature}[/bold][/yellow]{doc_flag}")
+                    
+            if analysis.removed_entities:
+                for ent in analysis.removed_entities:
+                    console.print(f"    [red]🗑️ [Removed] {ent.type} [bold]{ent.name}[/bold][/red]")
+
     # Showcase what Phase 3 will execute (LLM Execution)
     console.print(
         Panel(
-            "[bold white]🚀 Phase 1 complete![/bold white]\n"
-            "In Phase 3, this change context will automatically trigger context-aware LLM agents "
-            "to perform non-destructive updates to your markdown documentation and automatically synchronize "
-            "your Mermaid architecture diagrams to keep everything in sync.",
+            "[bold white]🚀 Phase 1 & Phase 2 Complete![/bold white]\n"
+            "The repository diff has been parsed, and code entities have been extracted at the AST level.\n"
+            "In Phase 3, this structural impact context will trigger the AI documentation agent "
+            "to perform context-aware updates to relevant markdown files and sync visual Mermaid flowcharts.",
             title="Next Steps (AI Documentation Engine)",
             border_style="magenta",
         )

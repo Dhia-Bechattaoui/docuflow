@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - 2026-05-17
+
+### Added
+
+- **Python AST Parser Module**: Implemented a modular syntax parser in `parser.py` using Python's native `ast` library. It extracts rich structural metadata from Python files including class hierarchies, bases, docstrings, method signatures, line ranges, and parameters.
+- **AST Change Impact Engine**: Created a code context diff module in `context_builder.py` that downloads base file contents from Git, parses both the original and current file AST structures, and computes a deep structural diff identifying added, modified, or removed classes, functions, and methods.
+- **Enhanced Git CLI Output**: Upgraded the `run` command in `main.py` to calculate and render a comprehensive, beautiful terminal AST Code Impact analysis sub-report using `rich` console highlights.
+- **AST Parsing Test Suite**: Added a robust unit test suite in `tests/test_parser.py` verifying AST extraction of classes, async functions, methods, parameter types, and docstrings.
+
+### Changed
+
+- **Version Upgrades**: Incremented project and package versions from `0.0.1` to `0.1.0` to represent the Phase 2 feature milestone.
+
 ## [0.0.1] - 2026-05-17
 
 ### Added
@@ -17,4 +30,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Git Ignoring Setup**: Added standard `.gitignore` file to isolate local virtual environments (`.venv`), Python compiled bytecode, and package builds from git tracking.
 - **Documentation Setup**: Automated the initial creation of target `docs/` folder structures via `docuflow init`.
 
+[Unreleased]: https://github.com/dhia/docuflow/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/dhia/docuflow/compare/v0.0.1...v0.1.0
 [0.0.1]: https://github.com/dhia/docuflow/releases/tag/v0.0.1
